@@ -34,17 +34,17 @@ func (bc *IngressController) Reconcile(k types.ReconcileKey) error {
 	}
 
 	annotations := ing.GetAnnotations()
-	for key, value := range annotations {
-		if key == "octops.io/multiproxy" && value == "true" {
-			rules := ing.Spec.Rules
-			for _, rule := range rules {
-				if rule.Host != "" {
-					log.Printf("Ingress %v has host: %v", ing.GetName(), rule.Host)
-				} else {
-					log.Printf("No host for ingress: %v", ing.GetName())
-				}
+	if annotations["octops.io/multiproxy"] == "true" && annotations["octops.io/branch"] != "" {
+		rules := ing.Spec.Rules
+		for _, rule := range rules {
+			if rule.Host != "" {
+				log.Printf("Ingress %v has host: %v", ing.GetName(), rule.Host)
+			} else {
+				log.Printf("No host for ingress: %v", ing.GetName())
 			}
 		}
+	} else {
+		log.Printf("Ingress ignored: %v", ing.GetName())
 	}
 
 	return nil
