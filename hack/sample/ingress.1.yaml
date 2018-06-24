@@ -17,3 +17,10 @@ spec:
         backend:
           serviceName: web-svc
           servicePort: 9001
+  - host: web2.domain.cloud
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: web-svc
+          servicePort: 9001
