@@ -2,6 +2,7 @@ package ingress
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
@@ -22,24 +23,31 @@ import (
 // Controller implementation logic for Ingress resources goes here.
 
 func (bc *IngressController) Reconcile(k types.ReconcileKey) error {
-	// INSERT YOUR CODE HERE
-
-	fmt.Printf("Reconcile: %v\n", k)
-
 	ing, err := bc.ingressclient.Ingresses(k.Namespace).Get(k.Name, v1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			fmt.Println("Object Not found")
+			log.Println("Object Not found")
 			return nil
 		}
-		fmt.Printf("err: %v", err)
+		fmt.Printf("\nerr: %v", err)
 		return err
 	}
 
-	fmt.Printf("%v", ing)
-	return nil
+	annotations := ing.GetAnnotations()
+	for key, value := range annotations {
+		if key == "octops.io/multiproxy" && value == "true" {
+			log.Println("Add to Multiproxy")
+			rules := ing.Spec.Rules
+			for _, rule := range rules {
+				if rule.Host != "" {
+					log.Printf("Host: %v", rule.Host)
+				} else {
+					log.Printf("No Host for: %v", ing.GetName())
+				}
+			}
+		}
+	}
 
-	//log.Printf("Implement the Reconcile function on ingress.IngressController to reconcile %s\n", k.Name)
 	return nil
 }
 
