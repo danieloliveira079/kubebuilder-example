@@ -1,0 +1,6 @@
+apiVersion: operator.octops.io/v1beta1
+kind: Medusa
+metadata:
+  name: medusa-example
+spec:
+  foo: bar
