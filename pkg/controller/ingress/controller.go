@@ -1,8 +1,11 @@
 package ingress
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
@@ -34,15 +37,57 @@ func (bc *IngressController) Reconcile(k types.ReconcileKey) error {
 	}
 
 	annotations := ing.GetAnnotations()
-	if annotations["octops.io/multiproxy"] == "true" && annotations["octops.io/branch"] != "" {
+	multiproxy := annotations["octops.io/multiproxy"]
+	branch := annotations["octops.io/branch"]
+
+	if multiproxy == "true" && branch != "" {
 		rules := ing.Spec.Rules
+		newUpstreams := []Upstream{}
+
 		for _, rule := range rules {
 			if rule.Host != "" {
+				up := Upstream{
+					Key:  branch,
+					Addr: rule.Host,
+				}
+
+				newUpstreams = append(newUpstreams, up)
 				log.Printf("Ingress %v has host: %v", ing.GetName(), rule.Host)
 			} else {
 				log.Printf("No host for ingress: %v", ing.GetName())
 			}
 		}
+
+		newConfigUpstream := Upstreams{
+			Upstreams: newUpstreams,
+		}
+
+		outJSON, err := json.Marshal(newConfigUpstream)
+		if err != nil {
+			fmt.Printf("\nError during Marshal operation: %v", err)
+		}
+
+		f, err := os.Open("config.json")
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		currentUpstreams := Upstreams{}
+		if err := json.NewDecoder(f).Decode(&currentUpstreams); err != nil {
+			return err
+		}
+
+		log.Printf("current: %v", currentUpstreams)
+
+		//Write final config to disk based on new and current upstreams
+		err = ioutil.WriteFile("config.json", outJSON, 0644)
+
+		if err != nil {
+			fmt.Printf("\nError writing file to disk: %v", err)
+		}
+
+		log.Printf("new: %v", string(outJSON))
 	} else {
 		log.Printf("Ingress ignored: %v", ing.GetName())
 	}
