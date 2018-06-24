@@ -36,13 +36,12 @@ func (bc *IngressController) Reconcile(k types.ReconcileKey) error {
 	annotations := ing.GetAnnotations()
 	for key, value := range annotations {
 		if key == "octops.io/multiproxy" && value == "true" {
-			log.Println("Add to Multiproxy")
 			rules := ing.Spec.Rules
 			for _, rule := range rules {
 				if rule.Host != "" {
-					log.Printf("Host: %v", rule.Host)
+					log.Printf("Ingress %v has host: %v", ing.GetName(), rule.Host)
 				} else {
-					log.Printf("No Host for: %v", ing.GetName())
+					log.Printf("No host for ingress: %v", ing.GetName())
 				}
 			}
 		}
